@@ -24,6 +24,12 @@ Main focus areas include:
 - Detection with Sigma and YARA
 - Technical report writing
 
+## Documented Labs
+
+| Lab | Difficulty | Category | Languages | Status |
+|---|---|---|---|---|
+| [Oski](labs/easy/oski/) | Easy | Threat Intel | FR / EN | Completed |
+
 ## Repository Structure
 
 ```text
@@ -33,6 +39,7 @@ cyberdefenders-writeups/
 ├── labs/
 │   ├── README.md
 │   ├── easy/
+│   │   └── oski/
 │   ├── medium/
 │   └── hard/
 ├── templates/
@@ -45,6 +52,7 @@ cyberdefenders-writeups/
 │   ├── iocs-template-fr.md
 │   └── iocs-template-en.md
 └── notes/
+    ├── README.md
     ├── methodology.md
     ├── tools.md
     ├── commands-cheatsheet.md
