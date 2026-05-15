@@ -10,77 +10,94 @@ Site officiel : https://cyberdefenders.org/
 
 Ce dépôt sert à documenter ma progression en cybersécurité défensive à travers des labs CyberDefenders.
 
-- Analyse SOC
+Les domaines travaillés sont notamment :
+
+- analyse SOC
 - Blue Team
 - Digital Forensics
 - Incident Response
 - Threat Hunting
 - Malware triage
-- Analyse réseau
-- Analyse de logs Windows
-- Investigation SIEM
-- Détection avec Sigma et YARA
-- Rédaction de rapports techniques
+- analyse réseau
+- analyse de logs Windows
+- investigation SIEM
+- détection avec Sigma et YARA
+- rédaction de rapports techniques
 
-## Structure
+## Structure du dépôt
 
 ```text
 cyberdefenders-writeups/
 ├── README.md
+├── README_EN.md
 ├── labs/
+│   ├── README.md
 │   ├── easy/
 │   ├── medium/
 │   └── hard/
 ├── templates/
+│   ├── README.md
+│   ├── README_EN.md
 │   ├── writeup-template-fr.md
-│   └── writeup-template-en.md
-├── notes/
-│   ├── methodology.md
-│   ├── tools.md
-│   ├── commands-cheatsheet.md
-│   └── soc-glossary.md
-└── assets/
-    └── screenshots/
+│   ├── writeup-template-en.md
+│   ├── notes-template-fr.md
+│   ├── notes-template-en.md
+│   ├── iocs-template-fr.md
+│   └── iocs-template-en.md
+└── notes/
+    ├── methodology.md
+    ├── tools.md
+    ├── commands-cheatsheet.md
+    └── soc-glossary.md
 ```
 
 ## Format des writeups
 
-Chaque writeup suivra une structure d'investigation claire :
+Chaque writeup suit une structure d'investigation claire :
 
-1. Contexte du lab
-2. Objectifs de l'analyse
-3. Outils utilisés
-4. Méthodologie
-5. Étapes d'investigation
-6. Éléments observés
-7. Timeline
-8. Indicateurs de compromission
-9. Conclusion
-10. Leçons apprises
+1. Informations générales
+2. Liens utiles
+3. Contexte du lab
+4. Objectif de l'analyse
+5. Préparation de l'environnement
+6. Artefacts fournis
+7. Méthodologie
+8. Analyse technique
+9. Réponses aux questions avec réponses partiellement masquées
+10. IOCs
+11. Timeline
+12. Conclusion
+13. Leçons apprises
 
 ## Exemple de structure pour un lab
 
 ```text
 labs/easy/nom-du-lab/
-├── README.md
+├── readme_NOMDULAB.md
+├── Readme_NOMDULAB_EN.md
 ├── writeup-fr.md
 ├── writeup-en.md
-└── screenshots/
+├── notes-fr.md
+├── notes-en.md
+├── iocs-fr.md
+└── iocs-en.md
 ```
 
 ## Méthodologie personnelle
 
-Chaque investigation doit rester lisible et reproductible.
+Chaque investigation doit rester lisible, structurée et reproductible.
 
 Je documente :
 
-- Les hypothèses de départ
-- Les commandes utilisées
-- Les artefacts analysés
-- Les éléments suspects
-- Les preuves importantes
-- Les erreurs ou pistes abandonnées
-- Les conclusions défensives
+- les hypothèses de départ
+- les commandes utilisées
+- les artefacts analysés
+- les éléments suspects
+- les preuves importantes
+- les erreurs ou pistes abandonnées
+- les conclusions défensives
+- les limites de l'analyse
+- les leçons apprises
 
 ## Outils possibles
 
@@ -101,12 +118,30 @@ Selon le lab, les outils utilisés peuvent inclure :
 - strings
 - VirusTotal
 - ANY.RUN
+- Hybrid Analysis
+- MITRE ATT&CK
 - SIEM ou interface fournie par le lab
 
-## Note
+## Gestion des réponses
 
-Les writeups publiés ici sont rédigés dans un but pédagogique et défensif.
+Les réponses directes aux questions des labs peuvent être partiellement masquées dans les writeups publics.
+
+L'objectif est d'éviter le simple copier-coller tout en montrant la méthode d'investigation, les outils utilisés et le raisonnement technique.
+
+Exemple :
+
+```text
+Réponse complète : non publiée directement
+Réponse masquée : http://******.example/***.php
+Méthode : documentée clairement
+```
+
+## Avertissement
+
+Les writeups publiés ici sont rédigés dans un but pédagogique, défensif et éthique.
 
 Ils ne doivent pas être utilisés pour contourner l'apprentissage ou simplement copier des réponses.
 
 L'objectif est de comprendre la méthodologie, les outils et le raisonnement derrière chaque investigation.
+
+Aucune activité offensive réelle ou non autorisée n'est réalisée dans le cadre de ce dépôt.
