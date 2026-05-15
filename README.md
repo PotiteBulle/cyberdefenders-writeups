@@ -24,6 +24,12 @@ Les domaines travaillés sont notamment :
 - détection avec Sigma et YARA
 - rédaction de rapports techniques
 
+## Labs documentés
+
+| Lab | Difficulté | Catégorie | Langues | Statut |
+|---|---|---|---|---|
+| [Oski](labs/easy/oski/) | Easy | Threat Intel | FR / EN | Terminé |
+
 ## Structure du dépôt
 
 ```text
@@ -33,6 +39,7 @@ cyberdefenders-writeups/
 ├── labs/
 │   ├── README.md
 │   ├── easy/
+│   │   └── oski/
 │   ├── medium/
 │   └── hard/
 ├── templates/
@@ -45,6 +52,7 @@ cyberdefenders-writeups/
 │   ├── iocs-template-fr.md
 │   └── iocs-template-en.md
 └── notes/
+    ├── README.md
     ├── methodology.md
     ├── tools.md
     ├── commands-cheatsheet.md
