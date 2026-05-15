@@ -2,14 +2,18 @@
 
 Personal repository dedicated to my CyberDefenders writeups.
 
-CyberDefenders is a Blue Team and SOC training platform offering labs, cyber ranges, investigation scenarios, training paths and certifications.
+CyberDefenders is a Blue Team and SOC training platform offering labs, cyber ranges, investigation scenarios, training paths, and certifications.
 
 Official website: https://cyberdefenders.org/
 
 ## Repository Goal
 
+This repository documents my progress in defensive cybersecurity through CyberDefenders labs.
+
+Main focus areas include:
+
 - SOC analysis
-- Blue Team operations
+- Blue Team
 - Digital Forensics
 - Incident Response
 - Threat Hunting
@@ -17,72 +21,87 @@ Official website: https://cyberdefenders.org/
 - Network analysis
 - Windows log analysis
 - SIEM investigation
-- Sigma and YARA detection
+- Detection with Sigma and YARA
 - Technical report writing
 
-## Recommended Structure
+## Repository Structure
 
 ```text
 cyberdefenders-writeups/
 ├── README.md
+├── README_EN.md
 ├── labs/
+│   ├── README.md
 │   ├── easy/
 │   ├── medium/
 │   └── hard/
 ├── templates/
+│   ├── README.md
+│   ├── README_EN.md
 │   ├── writeup-template-fr.md
-│   └── writeup-template-en.md
-├── notes/
-│   ├── methodology.md
-│   ├── tools.md
-│   ├── commands-cheatsheet.md
-│   └── soc-glossary.md
-└── assets/
-    └── screenshots/
+│   ├── writeup-template-en.md
+│   ├── notes-template-fr.md
+│   ├── notes-template-en.md
+│   ├── iocs-template-fr.md
+│   └── iocs-template-en.md
+└── notes/
+    ├── methodology.md
+    ├── tools.md
+    ├── commands-cheatsheet.md
+    └── soc-glossary.md
 ```
 
 ## Writeup Format
 
 Each writeup follows a clear investigation structure:
 
-1. Lab context
-2. Analysis objectives
-3. Tools used
-4. Methodology
-5. Investigation steps
-6. Observed findings
-7. Timeline
-8. Indicators of Compromise
-9. Conclusion
-10. Lessons learned
+1. General information
+2. Useful links
+3. Lab context
+4. Analysis objective
+5. Environment preparation
+6. Provided artifacts
+7. Methodology
+8. Technical analysis
+9. Lab questions with partially masked answers
+10. IOCs
+11. Timeline
+12. Conclusion
+13. Lessons learned
 
 ## Example Lab Structure
 
 ```text
 labs/easy/lab-name/
-├── README.md
+├── readme_LABNAME.md
+├── Readme_LABNAME_EN.md
 ├── writeup-fr.md
 ├── writeup-en.md
-└── screenshots/
+├── notes-fr.md
+├── notes-en.md
+├── iocs-fr.md
+└── iocs-en.md
 ```
 
 ## Personal Methodology
 
-Each investigation should remain readable and reproducible.
+Each investigation should remain readable, structured, and reproducible.
 
 I document:
 
-- Initial hypotheses
-- Commands used
-- Analyzed artifacts
-- Suspicious elements
-- Important evidence
-- Errors or abandoned leads
-- Defensive conclusions
+- initial hypotheses
+- commands used
+- analyzed artifacts
+- suspicious elements
+- important evidence
+- mistakes or abandoned leads
+- defensive conclusions
+- analysis limitations
+- lessons learned
 
 ## Possible Tools
 
-Depending on the lab, the tools may include:
+Depending on the lab, tools may include:
 
 - Wireshark
 - CyberChef
@@ -99,12 +118,30 @@ Depending on the lab, the tools may include:
 - strings
 - VirusTotal
 - ANY.RUN
+- Hybrid Analysis
+- MITRE ATT&CK
 - SIEM or lab-provided interface
 
-## Note
+## Answer Handling
 
-The writeups published here are written for educational and defensive purposes.
+Direct answers to lab questions may be partially masked in public writeups.
+
+The goal is to avoid simple copy-pasting while still showing the investigation method, tools used, and technical reasoning.
+
+Example:
+
+```text
+Full answer: not published directly
+Masked answer: http://******.example/***.php
+Method: clearly documented
+```
+
+## Disclaimer
+
+The writeups published here are written for educational, defensive, and ethical purposes.
 
 They should not be used to bypass learning or simply copy answers.
 
-The goal is to understand the methodology, tools and reasoning behind each investigation.
+The goal is to understand the methodology, tools, and reasoning behind each investigation.
+
+No real-world offensive or unauthorized activity is performed as part of this repository.
