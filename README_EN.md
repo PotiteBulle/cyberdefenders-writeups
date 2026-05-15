@@ -29,6 +29,7 @@ Main focus areas include:
 | Lab | Difficulty | Category | Languages | Status |
 |---|---|---|---|---|
 | [Oski](labs/easy/oski/) | Easy | Threat Intel | FR / EN | Completed |
+| [Tomcat Takeover](labs/easy/tomcat-takeover/) | Easy | Network Forensics | FR / EN | In progress |
 
 ## Repository Structure
 
