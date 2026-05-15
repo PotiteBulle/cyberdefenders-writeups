@@ -29,6 +29,7 @@ Les domaines travaillés sont notamment :
 | Lab | Difficulté | Catégorie | Langues | Statut |
 |---|---|---|---|---|
 | [Oski](labs/easy/oski/) | Easy | Threat Intel | FR / EN | Terminé |
+| [Tomcat Takeover](labs/easy/tomcat-takeover/) | Easy | Network Forensics | FR / EN | En cours |
 
 ## Structure du dépôt
 
